@@ -1,0 +1,56 @@
+workspace(name = "httpbin_java_library")
+
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+# Rules for Java
+http_archive(
+    name = "rules_java",
+    urls = [
+        "https://github.com/bazelbuild/rules_java/releases/download/7.1.0/rules_java-7.1.0.tar.gz",
+    ],
+    sha256 = "f8ae9ed3887df02f40de9f4f7ac3873e6dd7a471f9cddf63952538b94b59aeb3",
+)
+
+# Rules for Android (disabled for now)
+# http_archive(
+#     name = "rules_android",
+#     urls = ["https://github.com/bazelbuild/rules_android/archive/v0.1.1.zip"],
+#     sha256 = "cd06d15dd8bb59926e4d65f9003bfc20f9da4b2519985c27e190cddc8b7a7806",
+#     strip_prefix = "rules_android-0.1.1",
+# )
+
+# JVM External dependencies
+http_archive(
+    name = "rules_jvm_external",
+    strip_prefix = "rules_jvm_external-4.5",
+    sha256 = "b17d7388feb9bfa7f2fa09031b32707df529f26c91ab9e5d909eb1676badd9a6",
+    url = "https://github.com/bazelbuild/rules_jvm_external/archive/4.5.zip",
+)
+
+load("@rules_jvm_external//:repositories.bzl", "rules_jvm_external_deps")
+rules_jvm_external_deps()
+
+load("@rules_jvm_external//:setup.bzl", "rules_jvm_external_setup")
+rules_jvm_external_setup()
+
+load("@rules_jvm_external//:defs.bzl", "maven_install")
+
+maven_install(
+    artifacts = [
+        "com.squareup.okhttp3:okhttp:4.12.0",
+        "com.squareup.moshi:moshi:1.15.0",
+        "com.squareup.moshi:moshi-adapters:1.15.0",
+        "junit:junit:4.13.2",
+        "org.mockito:mockito-core:4.6.1",
+        "com.squareup.okhttp3:mockwebserver:4.12.0",
+        "org.assertj:assertj-core:3.24.2",
+    ],
+    repositories = [
+        "https://repo1.maven.org/maven2",
+    ],
+)
+
+# Android SDK and NDK (disabled for now)
+# load("@rules_android//android:rules.bzl", "android_sdk_repository", "android_ndk_repository")
+# android_sdk_repository(name = "androidsdk")
+# android_ndk_repository(name = "androidndk")

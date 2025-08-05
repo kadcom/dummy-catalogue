@@ -1,0 +1,74 @@
+module(
+    name = "dummy-json-client",
+    version = "1.0.0",
+)
+
+# Java rules
+bazel_dep(name = "rules_java", version = "7.1.0")
+
+# Java toolchain
+java_toolchains = use_extension("@rules_java//java:extensions.bzl", "toolchains")
+use_repo(java_toolchains, "remotejdk17_linux", "remotejdk17_macos", "remotejdk17_win")
+
+# Android rules
+bazel_dep(name = "rules_android", version = "0.6.5")
+
+# JVM external dependencies
+bazel_dep(name = "rules_jvm_external", version = "4.5")
+
+maven = use_extension("@rules_jvm_external//:extensions.bzl", "maven")
+
+maven.install(
+    artifacts = [
+        # Runtime dependencies
+        "com.squareup.okhttp3:okhttp:4.12.0",
+        "com.squareup.moshi:moshi:1.15.0",
+        "com.squareup.moshi:moshi-adapters:1.15.0",
+    ],
+    repositories = [
+        "https://repo1.maven.org/maven2",
+    ],
+    version_conflict_policy = "pinned",
+)
+
+# Test-only dependencies using maven.artifact
+maven.artifact(
+    group = "junit",
+    artifact = "junit",
+    version = "4.13.2",
+    testonly = True,
+)
+
+maven.artifact(
+    group = "org.mockito",
+    artifact = "mockito-core",
+    version = "5.4.0",
+    testonly = True,
+)
+
+maven.artifact(
+    group = "com.squareup.okhttp3",
+    artifact = "mockwebserver",
+    version = "4.12.0",
+    testonly = True,
+)
+
+maven.artifact(
+    group = "org.assertj",
+    artifact = "assertj-core",
+    version = "3.24.2",
+    testonly = True,
+)
+
+use_repo(maven, "maven")
+
+# Android SDK configuration
+android_sdk_repository = use_extension("@rules_android//:extensions.bzl", "android_sdk_repository")
+android_sdk_repository.configure(
+    name = "androidsdk",
+    
+    api_level = 34,
+    build_tools_version = "34.0.0",
+)
+
+use_repo(android_sdk_repository, "androidsdk")

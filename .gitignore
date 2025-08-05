@@ -1,0 +1,35 @@
+# Bazel build artifacts
+bazel-*
+/bazel-*
+
+# Java build artifacts
+*.jar
+*.class
+*.war
+*.ear
+*.aar
+!dummy-json-client.aar
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Maven
+target/
+
+# Bazel lock files
+MODULE.bazel.lock
+rules_jvm_external++maven+maven_install.json
+
+# Test reports
+TEST-*.xml
