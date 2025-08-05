@@ -47,3 +47,30 @@ java_test(
     size = "medium",
     testonly = True,
 )
+
+# Objective-C library
+objc_library(
+    name = "dummy-json-client-objc",
+    srcs = glob([
+        "src/main/objc/*.m",
+    ]),
+    hdrs = glob([
+        "src/main/objc/*.h", 
+    ]),
+    visibility = ["//visibility:public"],
+)
+
+# Note: Apple unit tests (iOS/macOS) require compatible Bazel/rules_apple versions
+# The Objective-C library and test library build successfully
+# Tests can be run directly with Xcode or compatible test runner
+
+objc_library(
+    name = "dummy-json-client-objc-test-lib", 
+    srcs = glob([
+        "src/test/objc/*.m",
+    ]),
+    deps = [
+        ":dummy-json-client-objc",
+    ],
+    testonly = True,
+)

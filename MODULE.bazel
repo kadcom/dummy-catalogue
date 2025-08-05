@@ -13,6 +13,10 @@ use_repo(java_toolchains, "remotejdk17_linux", "remotejdk17_macos", "remotejdk17
 # Android rules
 bazel_dep(name = "rules_android", version = "0.6.5")
 
+# Apple/Objective-C rules
+bazel_dep(name = "rules_apple", version = "3.9.2")
+bazel_dep(name = "apple_support", version = "1.17.0")
+
 # JVM external dependencies
 bazel_dep(name = "rules_jvm_external", version = "4.5")
 
