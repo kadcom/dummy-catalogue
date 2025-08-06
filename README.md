@@ -1,6 +1,70 @@
-# HttpBin Java Client
+# DummyJSON Java Client & Android Commerce App
 
-A pure Java library for interacting with [httpbin.org](https://httpbin.org) APIs, compatible with both JVM and Android platforms. Built with Bazel and supports both Maven JAR and Android AAR distribution.
+A pure Java library for interacting with [DummyJSON](https://dummyjson.com) APIs, featuring a high-performance Android e-commerce showcase app. Built with Bazel and supports both Maven JAR and Android AAR distribution.
+
+## 🚀 Android Commerce App
+
+**High-performance e-commerce showcase** demonstrating the DummyJSON client with optimized Canvas rendering:
+
+### Building the Android App
+
+```bash
+# Build Android Commerce APK (with ProGuard optimization)
+bazel build :commerce-app
+
+# Install to connected Android device/emulator
+bazel mobile-install :commerce-app
+
+# Build for debugging (faster, no optimization)
+bazel build -c dbg :commerce-app
+```
+
+### App Features
+
+- **Pure Canvas rendering** for 60fps scrolling performance
+- **Hybrid caching system** eliminates overdraw (red → blue/none) 
+- **Async image loading** with LRU memory management
+- **ProGuard optimization** reduces APK to 1.7MB
+- **Scroll-aware animations** pause during fast scrolling
+- **Material Design** implemented programmatically (no XML)
+
+### Performance Testing
+
+```bash
+# Enable overdraw visualization on device
+adb shell setprop debug.hwui.overdraw show
+
+# Disable overdraw visualization  
+adb shell setprop debug.hwui.overdraw false
+```
+
+📖 **See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed technical documentation.**
+
+## 📦 DummyJSON Java Client Library
+
+### Building from Source
+
+**Requirements:**
+- Java 17+ 
+- [Bazel](https://bazel.build) 6.0+
+- Android SDK (set `ANDROID_HOME` environment variable)
+
+```bash
+# Build Java library
+bazel build :dummy-json-client
+
+# Build Android AAR  
+bazel build :dummy-json-client-android
+
+# Build Android Commerce App
+bazel build :commerce-app
+
+# Run tests
+bazel test :dummy-json-client-test
+
+# Build everything
+bazel build //...
+```
 
 ## Features
 
@@ -32,85 +96,85 @@ implementation 'dev.kadcom:httpbin-client:1.0.0'
 ### Basic Usage (HttpURLConnection)
 ```java
 // Default client uses HttpURLConnection (no external dependencies)
-HttpBinClient client = new HttpBinClient();
+DummyJsonClient client = new DummyJsonClient();
 
-// Synchronous requests
-HttpBinResponse response = client.get("/get");
-System.out.println("Origin: " + response.getOrigin().orElse("unknown"));
+// Get all products
+ProductsResponse products = client.getProducts();
+System.out.println("Found " + products.getTotal() + " products");
 
-// POST with JSON
-String json = "{\"message\":\"Hello HttpBin\"}";
-HttpBinResponse postResponse = client.post("/post", json);
+// Get specific product
+Product product = client.getProduct(1);
+System.out.println("Product: " + product.getTitle());
 ```
 
 ### With OkHttp (Recommended)
 ```java
 // Use OkHttp for better performance and HTTP/2 support
-HttpBinClient client = HttpBinClient.withOkHttp();
+DummyJsonClient client = DummyJsonClient.withOkHttp();
 
 // Or provide your own OkHttp instance
 OkHttpClient okHttp = new OkHttpClient.Builder()
     .connectTimeout(10, TimeUnit.SECONDS)
     .build();
-HttpBinClient client = new HttpBinClient(okHttp);
+DummyJsonClient client = new DummyJsonClient(okHttp);
 ```
 
 ### Async Operations
 ```java
 // CompletableFuture-based async operations
-CompletableFuture<HttpBinResponse> future = client.getAsync("/get");
+CompletableFuture<ProductsResponse> future = client.getProductsAsync();
 
 // Chain operations
-client.getAsync("/get")
-    .thenApply(response -> response.getOrigin().orElse("unknown"))
-    .thenCompose(origin -> client.postAsync("/post", "{\"origin\":\"" + origin + "\"}"))
+client.getProductAsync(1)
+    .thenApply(Product::getCategory)
+    .thenCompose(category -> client.getProductsByCategoryAsync(category))
     .thenAccept(System.out::println);
 
 // Combine multiple requests
-CompletableFuture<String> combined = client.getAsync("/get")
-    .thenCombine(client.getAsync("/ip"), (resp1, resp2) -> 
-        "Response 1: " + resp1.getOrigin() + ", Response 2: " + resp2.getOrigin());
+CompletableFuture<String> combined = client.getProductAsync(1)
+    .thenCombine(client.getProductAsync(2), (p1, p2) -> 
+        "Product 1: " + p1.getTitle() + ", Product 2: " + p2.getTitle());
 ```
 
-### HttpBin Specific Endpoints
+### DummyJSON Specific Endpoints
 ```java
-// Status codes
-StatusResponse status = client.status(200);
-StatusResponse notFound = client.status(404);
+// Categories
+List<String> categories = client.getCategories();
 
-// Delay
-DelayResponse delayed = client.delay(2); // 2 second delay
+// Products by category
+ProductsResponse smartphones = client.getProductsByCategory("smartphones");
 
-// Cookies
-CookieResponse cookies = client.cookies();
-String sessionId = cookies.getCookie("session").orElse("no-session");
+// Search products
+ProductsResponse results = client.searchProducts("laptop");
+
+// Pagination
+ProductsResponse page2 = client.getProducts(10, 20); // limit=10, skip=20
 ```
 
 ### Configuration
 ```java
-HttpBinClient client = new HttpBinClient()
+DummyJsonClient client = DummyJsonClient.withOkHttp()
     .setTimeout(5000) // 5 second timeout
-    .addDefaultHeader("User-Agent", "MyApp/1.0")
-    .addDefaultHeader("X-API-Key", "secret");
+    .addDefaultHeader("User-Agent", "MyApp/1.0");
 ```
 
 ### Android Usage
 ```java
 public class MainActivity extends AppCompatActivity {
-    private HttpBinClient httpBinClient;
+    private DummyJsonClient dummyJsonClient;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
         // Initialize client (works the same as JVM)
-        httpBinClient = HttpBinClient.withOkHttp();
+        dummyJsonClient = DummyJsonClient.withOkHttp();
         
         // Use async methods to avoid blocking UI thread
-        httpBinClient.getAsync("/get")
+        dummyJsonClient.getProductsAsync()
             .thenAccept(response -> runOnUiThread(() -> {
                 // Update UI with response
-                textView.setText("Origin: " + response.getOrigin().orElse("unknown"));
+                textView.setText("Found " + response.getTotal() + " products");
             }));
     }
 }
@@ -120,22 +184,22 @@ public class MainActivity extends AppCompatActivity {
 
 ### Build JAR
 ```bash
-bazel build //:httpbin-client
+bazel build //:dummy-json-client
 ```
 
 ### Build Android AAR
 ```bash
-bazel build //:httpbin-client-android
+bazel build //:dummy-json-client-android
+```
+
+### Build Android Commerce App
+```bash
+bazel build //:commerce-app
 ```
 
 ### Run Tests
 ```bash
-bazel test //:httpbin-client-test
-```
-
-### Integration Tests (requires internet)
-```bash
-bazel test //src/test/java/dev/kadcom/httpbin/integration:all
+bazel test //:dummy-json-client-test
 ```
 
 ## Architecture
@@ -151,12 +215,12 @@ The library is designed with optional dependencies:
 All response models use Java 8+ Optional for null-safe access:
 
 ```java
-HttpBinResponse response = client.get("/get");
+ProductsResponse response = client.getProducts();
 
 // Safe access to nullable fields
-String origin = response.getOrigin().orElse("unknown");
-Map<String, String> headers = response.getHeaders(); // Never null
-Optional<String> userAgent = response.getHeader("User-Agent");
+List<Product> products = response.getProducts(); // Never null
+int total = response.getTotal();
+Optional<String> brand = product.getBrand();
 ```
 
 ## Compatibility

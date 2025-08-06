@@ -14,4 +14,4 @@ test --tool_java_language_version=17
 test --tool_java_runtime_version=remotejdk_17
 
 # Android configuration
-build --action_env=ANDROID_HOME=
+build --action_env=ANDROID_HOME

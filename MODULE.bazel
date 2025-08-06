@@ -68,11 +68,11 @@ maven.artifact(
 
 use_repo(maven, "maven")
 
-# Android SDK configuration
+# Android SDK configuration - uses ANDROID_HOME environment variable
 android_sdk_repository = use_extension("@rules_android//:extensions.bzl", "android_sdk_repository")
 android_sdk_repository.configure(
     name = "androidsdk",
-    
+    # Will use ANDROID_HOME environment variable if path is not specified
     api_level = 34,
     build_tools_version = "34.0.0",
 )
