@@ -176,13 +176,8 @@ public class ProductCardView extends View {
                     if (loadingRotation >= 360f) {
                         loadingRotation = 0f;
                     }
-                    // Mark cache dirty only for loading animation, not full rebuild
-                    if (cachedCardBitmap != null && !cachedCardBitmap.isRecycled()) {
-                        // Just update the loading indicator region instead of full invalidate
-                        invalidateLoadingRegion();
-                    } else {
-                        invalidate();
-                    }
+                    // Only invalidate the loading region to animate without redrawing cache
+                    invalidateLoadingRegion();
                     postDelayed(this, 32); // Reduced to 30fps for performance
                 }
             }
@@ -221,9 +216,15 @@ public class ProductCardView extends View {
             cachedCardBitmap != null && !cachedCardBitmap.isRecycled() &&
             cachedCardBitmap.getWidth() == width && cachedCardBitmap.getHeight() == height) {
             
-            // SINGLE draw call - just draw the cached bitmap
+            // Draw cached card (static content)
             canvas.drawBitmap(cachedCardBitmap, 0, 0, null);
-            return; // No additional drawing to prevent overdraw
+            
+            // Draw loading indicator on top if still loading (dynamic content)
+            if (imageLoading && !isScrolling) {
+                calculateLayout(width, height);
+                drawLoadingIndicator(canvas, imageRect);
+            }
+            return;
         }
         
         // Need to redraw card - prepare cache
@@ -234,9 +235,20 @@ public class ProductCardView extends View {
             drawCardContent(cachedCardCanvas, width, height);
             // Now draw the completed cache to screen in one operation
             canvas.drawBitmap(cachedCardBitmap, 0, 0, null);
+            
+            // Draw loading indicator on top if still loading (not cached)
+            if (imageLoading && !isScrolling) {
+                calculateLayout(width, height);
+                drawLoadingIndicator(canvas, imageRect);
+            }
         } else {
             // Fallback: draw directly if no cache available
             drawCardContent(canvas, width, height);
+            
+            // Draw loading indicator directly
+            if (imageLoading && !isScrolling) {
+                drawLoadingIndicator(canvas, imageRect);
+            }
         }
         
         // Mark cache as clean
@@ -302,13 +314,9 @@ public class ProductCardView extends View {
             // Draw product image with proper scaling
             drawImageWithRoundedCorners(canvas, productImage, imageRect);
         } else {
-            // Draw elegant placeholder
+            // Draw elegant placeholder (static content only for cache)
             drawImagePlaceholder(canvas, imageRect);
-            
-            // Include loading indicator in cached bitmap to prevent overdraw
-            if (imageLoading) {
-                drawLoadingIndicator(canvas, imageRect);
-            }
+            // Loading indicator will be drawn separately to allow animation
         }
     }
     
@@ -697,6 +705,8 @@ public class ProductCardView extends View {
         } else if (imageLoading) {
             // Resume loading animation when scroll stops
             startLoadingAnimation();
+            // Trigger immediate redraw to show loading indicator
+            invalidateLoadingRegion();
         }
     }
     
