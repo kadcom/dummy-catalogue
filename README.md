@@ -242,7 +242,7 @@ Optional<String> brand = product.getBrand();
 
 ## License
 
-MIT License - see LICENSE file for details.
+GPL v3 License - see COPYING file for details.
 
 ## Contributing
 
