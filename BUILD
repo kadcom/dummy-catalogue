@@ -1,11 +1,11 @@
 load("@rules_java//java:defs.bzl", "java_library", "java_test")
-load("@rules_android//android:rules.bzl", "android_library")
+load("@rules_android//android:rules.bzl", "android_library", "android_binary")
 
 # Main Java library (for JVM/Server usage)
 java_library(
     name = "dummy-json-client",
     srcs = glob([
-        "src/main/java/**/*.java",
+        "src/main/java/dev/kadcom/dummyjson/**/*.java",
     ]),
     deps = [
         "@maven//:com_squareup_okhttp3_okhttp",
@@ -19,7 +19,7 @@ java_library(
 android_library(
     name = "dummy-json-client-android",
     srcs = glob([
-        "src/main/java/**/*.java",
+        "src/main/java/dev/kadcom/dummyjson/**/*.java",
     ]),
     manifest = "src/main/AndroidManifest.xml",
     deps = [
@@ -27,6 +27,31 @@ android_library(
         "@maven//:com_squareup_moshi_moshi",
         "@maven//:com_squareup_moshi_moshi_adapters",
     ],
+    visibility = ["//visibility:public"],
+)
+
+# Android Commerce App Library
+android_library(
+    name = "commerce-app-lib",
+    srcs = glob([
+        "src/main/java/dev/kadcom/commerce/**/*.java",
+    ]),
+    manifest = "src/main/AndroidManifest.xml",
+    deps = [
+        ":dummy-json-client-android",
+        "@maven//:com_squareup_okhttp3_okhttp",
+        "@maven//:androidx_recyclerview_recyclerview",
+        "@maven//:androidx_swiperefreshlayout_swiperefreshlayout", 
+        "@maven//:androidx_viewpager2_viewpager2",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Android Commerce App APK
+android_binary(
+    name = "commerce-app",
+    deps = [":commerce-app-lib"],
+    manifest = "src/main/AndroidManifest.xml",
     visibility = ["//visibility:public"],
 )
 

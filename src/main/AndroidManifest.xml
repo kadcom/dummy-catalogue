@@ -1,8 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="dev.kadcom.dummyjson">
+    package="dev.kadcom.commerce">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <application
+        android:allowBackup="true"
+        android:label="Commerce Showcase"
+        android:theme="@android:style/Theme.Material.Light.NoActionBar"
+        android:hardwareAccelerated="true"
+        android:largeHeap="true"
+        android:usesCleartextTraffic="true">
+        
+        <activity 
+            android:name=".activities.ProductListActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        
+        <activity 
+            android:name=".activities.ProductDetailActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".activities.ProductListActivity"
+            android:windowSoftInputMode="adjustResize" />
+            
+    </application>
 </manifest>
