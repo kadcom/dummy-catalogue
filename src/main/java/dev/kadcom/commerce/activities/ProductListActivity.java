@@ -10,7 +10,7 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+// SwipeRefreshLayout removed to reduce APK size
 import dev.kadcom.commerce.adapters.ProductAdapter;
 import dev.kadcom.commerce.models.ProductItem;
 import dev.kadcom.commerce.utils.StyleUtils;
@@ -30,7 +30,7 @@ public class ProductListActivity extends Activity {
     
     private RecyclerView recyclerView;
     private ProductAdapter adapter;
-    private SwipeRefreshLayout swipeRefresh;
+    // SwipeRefreshLayout removed for smaller APK
     private ProgressBar loadingProgress;
     private DummyJsonClient apiClient;
     
@@ -47,7 +47,7 @@ public class ProductListActivity extends Activity {
         setupApiClient();
         createViews();
         setupRecyclerView();
-        setupSwipeRefresh();
+        // setupSwipeRefresh(); // Removed for smaller APK
         
         loadInitialData();
     }
@@ -65,16 +65,13 @@ public class ProductListActivity extends Activity {
         loadingProgress = createLoadingProgress();
         
         // Create swipe refresh layout
-        swipeRefresh = createSwipeRefreshLayout();
+        // swipeRefresh = createSwipeRefreshLayout(); // Removed for smaller APK
         
         // Create RecyclerView
         recyclerView = createRecyclerView();
         
-        // Add RecyclerView to swipe refresh
-        swipeRefresh.addView(recyclerView);
-        
-        // Add views to container
-        container.addView(swipeRefresh);
+        // Add views to container (SwipeRefreshLayout removed for smaller APK)
+        container.addView(recyclerView);
         container.addView(loadingProgress);
         
         setContentView(container);
@@ -102,21 +99,22 @@ public class ProductListActivity extends Activity {
         return progress;
     }
     
-    private SwipeRefreshLayout createSwipeRefreshLayout() {
-        SwipeRefreshLayout swipeRefresh = new SwipeRefreshLayout(this);
-        swipeRefresh.setLayoutParams(new ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        ));
-        
-        // Style the refresh indicator
-        swipeRefresh.setColorSchemeColors(
-            StyleUtils.PRIMARY_COLOR,
-            StyleUtils.ACCENT_COLOR
-        );
-        
-        return swipeRefresh;
-    }
+    // SwipeRefreshLayout removed to reduce APK size
+    // private SwipeRefreshLayout createSwipeRefreshLayout() {
+    //     SwipeRefreshLayout swipeRefresh = new SwipeRefreshLayout(this);
+    //     swipeRefresh.setLayoutParams(new ViewGroup.LayoutParams(
+    //         ViewGroup.LayoutParams.MATCH_PARENT,
+    //         ViewGroup.LayoutParams.MATCH_PARENT
+    //     ));
+    //     
+    //     // Style the refresh indicator
+    //     swipeRefresh.setColorSchemeColors(
+    //         StyleUtils.PRIMARY_COLOR,
+    //         StyleUtils.ACCENT_COLOR
+    //     );
+    //     
+    //     return swipeRefresh;
+    // }
     
     private RecyclerView createRecyclerView() {
         RecyclerView recyclerView = new RecyclerView(this);
@@ -176,12 +174,7 @@ public class ProductListActivity extends Activity {
     }
     
     private void setupSwipeRefresh() {
-        swipeRefresh.setOnRefreshListener(() -> {
-            currentPage = 0;
-            hasMoreData = true;
-            adapter.clearProducts();
-            loadProducts(true);
-        });
+        // SwipeRefreshLayout removed for smaller APK
     }
     
     private void loadInitialData() {
@@ -207,7 +200,7 @@ public class ProductListActivity extends Activity {
             runOnUiThread(() -> {
                 isLoading = false;
                 loadingProgress.setVisibility(View.GONE);
-                swipeRefresh.setRefreshing(false);
+                // swipeRefresh.setRefreshing(false); // Removed for smaller APK
                 
                 if (response != null && response.getProducts() != null) {
                     List<ProductItem> productItems = response.getProducts().stream()
@@ -225,7 +218,7 @@ public class ProductListActivity extends Activity {
             runOnUiThread(() -> {
                 isLoading = false;
                 loadingProgress.setVisibility(View.GONE);
-                swipeRefresh.setRefreshing(false);
+                // swipeRefresh.setRefreshing(false); // Removed for smaller APK
                 showError("Network error: " + throwable.getMessage());
             });
             return null;

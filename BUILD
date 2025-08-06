@@ -10,7 +10,6 @@ java_library(
     deps = [
         "@maven//:com_squareup_okhttp3_okhttp",
         "@maven//:com_squareup_moshi_moshi",
-        "@maven//:com_squareup_moshi_moshi_adapters",
     ],
     visibility = ["//visibility:public"],
 )
@@ -25,7 +24,6 @@ android_library(
     deps = [
         "@maven//:com_squareup_okhttp3_okhttp",
         "@maven//:com_squareup_moshi_moshi",
-        "@maven//:com_squareup_moshi_moshi_adapters",
     ],
     visibility = ["//visibility:public"],
 )
@@ -41,8 +39,6 @@ android_library(
         ":dummy-json-client-android",
         "@maven//:com_squareup_okhttp3_okhttp",
         "@maven//:androidx_recyclerview_recyclerview",
-        "@maven//:androidx_swiperefreshlayout_swiperefreshlayout", 
-        "@maven//:androidx_viewpager2_viewpager2",
     ],
     visibility = ["//visibility:public"],
 )
@@ -52,6 +48,7 @@ android_binary(
     name = "commerce-app",
     deps = [":commerce-app-lib"],
     manifest = "src/main/AndroidManifest.xml",
+    proguard_specs = ["proguard.cfg"],
     visibility = ["//visibility:public"],
 )
 

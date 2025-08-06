@@ -80,8 +80,10 @@ public class ImageLoader {
         
         // Check cache first
         Bitmap cached = getBitmapFromCache(url);
-        if (cached != null) {
-            mainHandler.post(() -> callback.onSuccess(cached));
+        if (cached != null && !cached.isRecycled()) {
+            // Cache hit - return immediately
+            Log.d(TAG, "Cache hit for: " + url.substring(Math.max(0, url.length() - 20)));
+            callback.onSuccess(cached);
             return;
         }
         
@@ -131,8 +133,10 @@ public class ImageLoader {
                     
                     if (bitmap != null) {
                         addBitmapToCache(url, bitmap);
+                        Log.d(TAG, "Image loaded and cached: " + url.substring(Math.max(0, url.length() - 20)));
                         mainHandler.post(() -> callback.onSuccess(bitmap));
                     } else {
+                        Log.w(TAG, "Failed to decode image: " + url.substring(Math.max(0, url.length() - 20)));
                         mainHandler.post(() -> callback.onError("Failed to decode image"));
                     }
                 } catch (Exception e) {

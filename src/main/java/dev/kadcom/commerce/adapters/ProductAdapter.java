@@ -119,10 +119,10 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
         }
         
         public void bind(ProductItem product, ProductCardView.OnProductClickListener clickListener) {
-            // Clear previous content first to prevent ghost data
-            cardView.clearContent();
+            // Important: Don't clear content immediately to avoid flickering
+            // The bindProduct method will handle proper state management
             
-            // Bind new product data
+            // Bind new product data (this will handle image loading properly)
             cardView.bindProduct(product);
             
             // Set click listener

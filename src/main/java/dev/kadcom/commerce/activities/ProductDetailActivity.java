@@ -13,7 +13,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.Nullable;
-import androidx.viewpager2.widget.ViewPager2;
+// ViewPager2 removed to reduce APK size
 import dev.kadcom.commerce.models.ProductItem;
 import dev.kadcom.commerce.utils.StyleUtils;
 import dev.kadcom.commerce.views.AsyncImageView;
@@ -37,7 +37,7 @@ public class ProductDetailActivity extends Activity {
     private ProductItem currentProduct;
     
     // UI Components
-    private ViewPager2 imageGallery;
+    // ViewPager2 removed for smaller APK
     private TextView titleView;
     private TextView brandView;
     private TextView priceView;
@@ -163,8 +163,8 @@ public class ProductDetailActivity extends Activity {
         container.addView(mainImage, imageParams);
         
         // Store reference for binding
-        imageGallery = new ViewPager2(this); // Placeholder for main image
-        imageGallery.setTag(mainImage); // Use tag to store actual image view
+        // imageGallery = new ViewPager2(this); // Removed for smaller APK
+        // imageGallery.setTag(mainImage); // Removed for smaller APK
     }
     
     private void createProductInfoSection(LinearLayout container) {
@@ -364,10 +364,10 @@ public class ProductDetailActivity extends Activity {
         if (currentProduct == null) return;
         
         // Bind image
-        AsyncImageView mainImage = (AsyncImageView) imageGallery.getTag();
-        if (mainImage != null) {
-            mainImage.loadImage(currentProduct.getPrimaryImageUrl());
-        }
+        // AsyncImageView mainImage = (AsyncImageView) imageGallery.getTag(); // Removed for smaller APK
+        // if (mainImage != null) { // Removed for smaller APK
+        //     mainImage.loadImage(currentProduct.getPrimaryImageUrl());
+        // }
         
         // Bind text data
         brandView.setText(currentProduct.getBrand());

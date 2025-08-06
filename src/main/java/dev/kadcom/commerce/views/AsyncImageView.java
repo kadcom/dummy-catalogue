@@ -6,6 +6,7 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.util.Log;
 import android.view.View;
 import dev.kadcom.commerce.utils.ImageLoader;
 import dev.kadcom.commerce.utils.StyleUtils;
@@ -16,12 +17,20 @@ import dev.kadcom.commerce.utils.StyleUtils;
  */
 public class AsyncImageView extends View {
     
+    private static final String TAG = "AsyncImageView";
+    
     private Bitmap bitmap;
     private Paint paint;
     private Paint placeholderPaint;
+    private Paint loadingPaint;
     private RectF drawRect;
     private String currentUrl;
     private boolean isLoading;
+    
+    // Loading animation - subtle pulse effect
+    private float loadingAlpha = 0.3f;
+    private boolean loadingAlphaIncreasing = true;
+    private Runnable loadingAnimator;
     
     // Placeholder styling
     private final int placeholderColor;
@@ -38,8 +47,38 @@ public class AsyncImageView extends View {
         placeholderColor = StyleUtils.BACKGROUND_COLOR;
         placeholderPaint.setColor(placeholderColor);
         
+        // Loading indicator paint - very subtle
+        loadingPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        loadingPaint.setColor(StyleUtils.PRIMARY_COLOR);
+        loadingPaint.setStyle(Paint.Style.FILL);
+        
         cornerRadius = StyleUtils.dpToPx(context, StyleUtils.RADIUS_MEDIUM);
         drawRect = new RectF();
+        
+        // Loading animation runnable - subtle pulse effect
+        loadingAnimator = new Runnable() {
+            @Override
+            public void run() {
+                if (isLoading) {
+                    // Gentle alpha pulsing
+                    if (loadingAlphaIncreasing) {
+                        loadingAlpha += 0.02f;
+                        if (loadingAlpha >= 0.8f) {
+                            loadingAlpha = 0.8f;
+                            loadingAlphaIncreasing = false;
+                        }
+                    } else {
+                        loadingAlpha -= 0.02f;
+                        if (loadingAlpha <= 0.3f) {
+                            loadingAlpha = 0.3f;
+                            loadingAlphaIncreasing = true;
+                        }
+                    }
+                    invalidate();
+                    postDelayed(this, 50); // Slower, more subtle animation
+                }
+            }
+        };
         
         // Set default size for layout
         setMinimumWidth(StyleUtils.dpToPx(context, 120));
@@ -50,14 +89,26 @@ public class AsyncImageView extends View {
      * Load image from URL asynchronously
      */
     public void loadImage(String url) {
-        if (url == null || url.equals(currentUrl)) {
+        if (url == null || url.isEmpty()) {
+            clearImage();
             return;
         }
         
+        // If same URL and already have bitmap, don't reload but ensure it's displayed
+        if (url.equals(currentUrl) && bitmap != null && !bitmap.isRecycled()) {
+            Log.d(TAG, "Same URL, bitmap exists: " + url.substring(Math.max(0, url.length() - 20)));
+            // Still trigger a redraw to make sure image is visible
+            invalidate();
+            return;
+        }
+        
+        // Update URL first
         currentUrl = url;
-        bitmap = null;
+        
+        // Start loading state (but don't clear existing bitmap immediately)
         isLoading = true;
-        invalidate(); // Trigger redraw for placeholder
+        startLoadingAnimation();
+        invalidate(); // Trigger redraw for loading state
         
         // Calculate target size based on view dimensions
         int width = getMeasuredWidth();
@@ -74,17 +125,25 @@ public class AsyncImageView extends View {
             public void onSuccess(Bitmap loadedBitmap) {
                 // Check if URL is still current (prevent outdated images in recycled views)
                 if (url.equals(currentUrl)) {
+                    Log.d(TAG, "Image success for: " + url.substring(Math.max(0, url.length() - 20)));
                     bitmap = loadedBitmap;
                     isLoading = false;
-                    post(() -> invalidate()); // Update UI on main thread
+                    stopLoadingAnimation();
+                    // Force immediate UI update
+                    invalidate();
+                } else {
+                    Log.d(TAG, "Ignoring outdated image: " + url.substring(Math.max(0, url.length() - 20)));
                 }
             }
             
             @Override
             public void onError(String error) {
                 if (url.equals(currentUrl)) {
+                    Log.w(TAG, "Image error for: " + url.substring(Math.max(0, url.length() - 20)) + " - " + error);
                     isLoading = false;
-                    post(() -> invalidate()); // Show error state
+                    stopLoadingAnimation();
+                    // Force immediate UI update 
+                    invalidate();
                 }
             }
         });
@@ -106,6 +165,11 @@ public class AsyncImageView extends View {
         if (bitmap != null && !bitmap.isRecycled()) {
             // Draw the loaded bitmap
             drawBitmapWithRoundedCorners(canvas, bitmap, drawRect);
+            
+            // Draw subtle loading indicator over image if still loading
+            if (isLoading) {
+                drawLoadingIndicator(canvas, drawRect);
+            }
         } else {
             // Draw placeholder
             drawPlaceholder(canvas, drawRect);
@@ -163,30 +227,64 @@ public class AsyncImageView extends View {
         // Draw background
         canvas.drawRoundRect(rect, cornerRadius, cornerRadius, placeholderPaint);
         
-        // Draw loading indicator or icon (simple approach)
+        // Draw loading indicator or icon
         if (isLoading) {
-            // Draw simple loading animation
-            Paint loadingPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-            loadingPaint.setColor(StyleUtils.TEXT_SECONDARY);
-            loadingPaint.setTextAlign(Paint.Align.CENTER);
-            loadingPaint.setTextSize(StyleUtils.spToPx(getContext(), StyleUtils.Typography.CAPTION_SIZE));
-            
-            canvas.drawText("Loading...", 
-                rect.centerX(), 
-                rect.centerY(), 
-                loadingPaint);
+            drawLoadingIndicator(canvas, rect);
         } else {
-            // Draw error state
+            // Draw error state with icon
             Paint errorPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
             errorPaint.setColor(StyleUtils.TEXT_SECONDARY);
             errorPaint.setTextAlign(Paint.Align.CENTER);
             errorPaint.setTextSize(StyleUtils.spToPx(getContext(), StyleUtils.Typography.CAPTION_SIZE));
             
-            canvas.drawText("Image", 
+            canvas.drawText("🖼️", 
                 rect.centerX(), 
                 rect.centerY(), 
                 errorPaint);
         }
+    }
+    
+    /**
+     * Draw loading indicator - spinning arc
+     */
+    private void drawLoadingIndicator(Canvas canvas, RectF rect) {
+        // Draw spinning arc in center
+        float centerX = rect.centerX();
+        float centerY = rect.centerY();
+        float radius = Math.min(rect.width(), rect.height()) * 0.15f;
+        
+        RectF arcRect = new RectF(
+            centerX - radius, centerY - radius,
+            centerX + radius, centerY + radius
+        );
+        
+        loadingPaint.setStyle(Paint.Style.STROKE);
+        loadingPaint.setStrokeWidth(StyleUtils.dpToPx(getContext(), 2));
+        loadingPaint.setAlpha(180);
+        
+        // Calculate rotation angle based on current time
+        long currentTime = System.currentTimeMillis();
+        float angle = (currentTime / 10) % 360;
+        
+        // Draw arc
+        canvas.drawArc(arcRect, angle, 90, false, loadingPaint);
+    }
+    
+    /**
+     * Start loading animation
+     */
+    private void startLoadingAnimation() {
+        removeCallbacks(loadingAnimator);
+        post(loadingAnimator);
+    }
+    
+    /**
+     * Stop loading animation
+     */
+    private void stopLoadingAnimation() {
+        removeCallbacks(loadingAnimator);
+        loadingAlpha = 0.3f;
+        loadingAlphaIncreasing = true;
     }
     
     /**
@@ -201,6 +299,7 @@ public class AsyncImageView extends View {
      * Clear current image (useful for recycling)
      */
     public void clearImage() {
+        stopLoadingAnimation();
         currentUrl = null;
         bitmap = null;
         isLoading = false;
@@ -210,8 +309,10 @@ public class AsyncImageView extends View {
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        // Clear image to help with memory management
-        clearImage();
+        // Stop animation and clear image to help with memory management
+        stopLoadingAnimation();
+        // Don't clear image here to maintain state during recycling
+        // clearImage();
     }
     
     @Override
@@ -225,5 +326,19 @@ public class AsyncImageView extends View {
         }
         
         setMeasuredDimension(width, height);
+    }
+    
+    /**
+     * Get current image URL for debugging
+     */
+    public String getCurrentUrl() {
+        return currentUrl;
+    }
+    
+    /**
+     * Check if currently loading
+     */
+    public boolean isCurrentlyLoading() {
+        return isLoading;
     }
 }
