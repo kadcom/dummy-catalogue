@@ -17,6 +17,7 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
     
     private final List<ProductItem> products;
     private ProductCardView.OnProductClickListener clickListener;
+    private boolean isScrolling = false;
     
     public ProductAdapter() {
         this.products = new ArrayList<>();
@@ -46,6 +47,17 @@ public class ProductAdapter extends RecyclerView.Adapter<ProductAdapter.ProductV
     public void onBindViewHolder(@NonNull ProductViewHolder holder, int position) {
         ProductItem product = products.get(position);
         holder.bind(product, clickListener);
+        // Notify card about current scroll state
+        holder.cardView.setScrolling(isScrolling);
+    }
+    
+    /**
+     * Notify adapter about scroll state for performance optimization
+     */
+    public void setScrolling(boolean scrolling) {
+        this.isScrolling = scrolling;
+        // No need to notify data changed, just update state
+        // Cards will get the state in their next bind call
     }
     
     @Override

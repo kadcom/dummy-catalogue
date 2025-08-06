@@ -149,10 +149,11 @@ public class ProductDetailActivity extends Activity {
         createActionButtons(container);
     }
     
+    private AsyncImageView mainImageView;
+    
     private void createImageGallery(LinearLayout container) {
-        // For now, create a single large image view
-        // In a full implementation, this would be a ViewPager2 with image adapter
-        AsyncImageView mainImage = new AsyncImageView(this);
+        // Create a single large image view
+        mainImageView = new AsyncImageView(this);
         
         LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
@@ -160,11 +161,7 @@ public class ProductDetailActivity extends Activity {
         );
         imageParams.bottomMargin = StyleUtils.dpToPx(this, StyleUtils.SPACING_LARGE);
         
-        container.addView(mainImage, imageParams);
-        
-        // Store reference for binding
-        // imageGallery = new ViewPager2(this); // Removed for smaller APK
-        // imageGallery.setTag(mainImage); // Removed for smaller APK
+        container.addView(mainImageView, imageParams);
     }
     
     private void createProductInfoSection(LinearLayout container) {
@@ -364,10 +361,9 @@ public class ProductDetailActivity extends Activity {
         if (currentProduct == null) return;
         
         // Bind image
-        // AsyncImageView mainImage = (AsyncImageView) imageGallery.getTag(); // Removed for smaller APK
-        // if (mainImage != null) { // Removed for smaller APK
-        //     mainImage.loadImage(currentProduct.getPrimaryImageUrl());
-        // }
+        if (mainImageView != null) {
+            mainImageView.loadImage(currentProduct.getPrimaryImageUrl());
+        }
         
         // Bind text data
         brandView.setText(currentProduct.getBrand());

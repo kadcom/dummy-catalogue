@@ -7,6 +7,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ProgressBar;
 import android.widget.Toast;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -146,8 +147,17 @@ public class ProductListActivity extends Activity {
         adapter.setOnProductClickListener(this::onProductClick);
         recyclerView.setAdapter(adapter);
         
-        // Add scroll listener for infinite scroll
+        // Add scroll listener for infinite scroll and overdraw optimization
         recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
+                super.onScrollStateChanged(recyclerView, newState);
+                
+                // Notify adapter about scroll state for performance optimization
+                boolean scrolling = newState != RecyclerView.SCROLL_STATE_IDLE;
+                adapter.setScrolling(scrolling);
+            }
+            
             @Override
             public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
                 super.onScrolled(recyclerView, dx, dy);

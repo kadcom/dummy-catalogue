@@ -63,6 +63,7 @@ public class ProductCardView extends View {
     // Loading animation
     private float loadingRotation = 0f;
     private Runnable loadingAnimator;
+    private boolean isScrolling = false;
     
     // Card dimensions
     private final int cardPadding;
@@ -170,16 +171,32 @@ public class ProductCardView extends View {
         loadingAnimator = new Runnable() {
             @Override
             public void run() {
-                if (imageLoading) {
+                if (imageLoading && getVisibility() == View.VISIBLE && !isScrolling) {
                     loadingRotation += 6f; // 6 degrees per frame
                     if (loadingRotation >= 360f) {
                         loadingRotation = 0f;
                     }
-                    invalidate();
-                    postDelayed(this, 16); // ~60fps
+                    // Mark cache dirty only for loading animation, not full rebuild
+                    if (cachedCardBitmap != null && !cachedCardBitmap.isRecycled()) {
+                        // Just update the loading indicator region instead of full invalidate
+                        invalidateLoadingRegion();
+                    } else {
+                        invalidate();
+                    }
+                    postDelayed(this, 32); // Reduced to 30fps for performance
                 }
             }
         };
+    }
+    
+    private void invalidateLoadingRegion() {
+        // Only invalidate the image area to reduce overdraw
+        if (imageRect != null) {
+            invalidate((int)imageRect.left, (int)imageRect.top, 
+                      (int)imageRect.right, (int)imageRect.bottom);
+        } else {
+            invalidate();
+        }
     }
     
     
@@ -204,24 +221,22 @@ public class ProductCardView extends View {
             cachedCardBitmap != null && !cachedCardBitmap.isRecycled() &&
             cachedCardBitmap.getWidth() == width && cachedCardBitmap.getHeight() == height) {
             
-            // Draw cached card
+            // SINGLE draw call - just draw the cached bitmap
             canvas.drawBitmap(cachedCardBitmap, 0, 0, null);
-            
-            // Only redraw loading indicator if still loading
-            if (imageLoading) {
-                calculateLayout(width, height);
-                drawLoadingIndicator(canvas, imageRect);
-            }
-            return;
+            return; // No additional drawing to prevent overdraw
         }
         
         // Need to redraw card - prepare cache
         prepareCachedCard(width, height);
         
-        // Draw to both actual canvas and cache
-        drawCardContent(canvas, width, height);
+        // Draw to cache first, then copy to screen (single screen draw)
         if (cachedCardCanvas != null) {
             drawCardContent(cachedCardCanvas, width, height);
+            // Now draw the completed cache to screen in one operation
+            canvas.drawBitmap(cachedCardBitmap, 0, 0, null);
+        } else {
+            // Fallback: draw directly if no cache available
+            drawCardContent(canvas, width, height);
         }
         
         // Mark cache as clean
@@ -267,12 +282,8 @@ public class ProductCardView extends View {
         // Calculate layout
         calculateLayout(width, height);
         
-        // Draw image area (but not loading indicator for cache)
-        if (canvas == cachedCardCanvas) {
-            drawImageForCache(canvas);
-        } else {
-            drawImage(canvas);
-        }
+        // Always draw image with loading state included in cache
+        drawImageWithLoadingState(canvas);
         
         // Draw discount badge if applicable
         if (currentProduct.hasDiscount()) {
@@ -286,13 +297,18 @@ public class ProductCardView extends View {
         drawTextContent(canvas);
     }
     
-    private void drawImageForCache(Canvas canvas) {
+    private void drawImageWithLoadingState(Canvas canvas) {
         if (productImage != null && !productImage.isRecycled()) {
             // Draw product image with proper scaling
             drawImageWithRoundedCorners(canvas, productImage, imageRect);
         } else {
             // Draw elegant placeholder
             drawImagePlaceholder(canvas, imageRect);
+            
+            // Include loading indicator in cached bitmap to prevent overdraw
+            if (imageLoading) {
+                drawLoadingIndicator(canvas, imageRect);
+            }
         }
     }
     
@@ -344,20 +360,6 @@ public class ProductCardView extends View {
         }
     }
     
-    private void drawImage(Canvas canvas) {
-        if (productImage != null && !productImage.isRecycled()) {
-            // Draw product image with proper scaling
-            drawImageWithRoundedCorners(canvas, productImage, imageRect);
-        } else {
-            // Draw elegant placeholder
-            drawImagePlaceholder(canvas, imageRect);
-            
-            // Show loading indicator if loading
-            if (imageLoading) {
-                drawLoadingIndicator(canvas, imageRect);
-            }
-        }
-    }
     
     private void drawDiscountBadge(Canvas canvas) {
         if (!currentProduct.hasDiscount()) return;
@@ -682,6 +684,20 @@ public class ProductCardView extends View {
         stopLoadingAnimation();
         // Keep images for performance during recycling
         // Cache cleanup handled by RecyclerView pool
+    }
+    
+    /**
+     * Notify card about scroll state to optimize drawing
+     */
+    public void setScrolling(boolean scrolling) {
+        this.isScrolling = scrolling;
+        if (scrolling) {
+            // Pause loading animation during scroll
+            stopLoadingAnimation();
+        } else if (imageLoading) {
+            // Resume loading animation when scroll stops
+            startLoadingAnimation();
+        }
     }
     
     /**
